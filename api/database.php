@@ -19,18 +19,6 @@ class Database {
             throw new \Exception($e->getMessage());   
         }			
     }
-    
-    public function get_data($fields, $extra_data) {
-        $data = array();
-        foreach ($fields as $field_name => $field_data) {
-            $data[$field_name] = $field_data['value'];
-        }
-        if ($extra_data) {
-            $data = array_merge($extra_data, $data);
-        }
-
-        return $data;
-    }
 
     public function select($query = "" , $params = []) {
         try {
@@ -61,6 +49,18 @@ class Database {
             $stmt->close();
 
             return $insert_id;
+        } catch(\Exception $e) {
+            throw New \Exception($e->getMessage());
+        }
+        return false;
+    }
+
+    public function delete($table, $where, $params) {
+        try {
+            $stmt = $this->executeStatement("DELETE FROM $table WHERE ".implode(" AND ", $where), $params);
+            $stmt->close();
+
+            return true;
         } catch(\Exception $e) {
             throw New \Exception($e->getMessage());
         }

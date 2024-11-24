@@ -2,6 +2,7 @@
 
 require_once(__DIR__ . "/database.php");
 require_once(__DIR__ . "/controller.php");
+require_once(__DIR__ . "/model.php");
 
 class Api {
     protected $urls = array();
