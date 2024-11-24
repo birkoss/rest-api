@@ -38,7 +38,7 @@ class Database {
         $params = array();
 
         foreach ($fields as $field_name => $field_data) {
-            $params[] = array($field_data['type'], $field_data['value']);
+            $params[] = new DatabaseParam($field_data->type, $field_data->value);
             $field_names[] = $field_name;
             $types[] = "?";
         }
@@ -72,7 +72,7 @@ class Database {
         $params = array();
 
         foreach ($fields as $field_name => $field_data) {
-            $params[] = array($field_data['type'], $field_data['value']);
+            $params[] = new DatabaseParam($field_data->type, $field_data->value);
             $field_types[] = $field_name . " = ?";
         }
 
@@ -98,8 +98,8 @@ class Database {
                 $types = "";
                 $var = array();
                 foreach ($params as $single_param) {
-                    $types .= $single_param[0];
-                    $var[] = $single_param[1];
+                    $types .= $single_param->type;
+                    $var[] = $single_param->value;
                 }
                 $stmt->bind_param($types, ...array_values($var));
             }
@@ -108,5 +108,15 @@ class Database {
         } catch(\Exception $e) {
             throw New \Exception($e->getMessage());
         }	
+    }
+}
+
+class DatabaseParam {
+    public $type;
+    public $value;
+
+    public function __construct($type, $value) {
+        $this->type = $type;
+        $this->value = $value;
     }
 }

@@ -12,9 +12,9 @@ class BaseController {
     public function format_data($fields, $data) {
         $new_data = array();
         foreach ($data as $field_name => $field_value) {
-            $new_data[$field_name] = array(
-                "value" => $field_value,
-                "type" => $fields[$field_name]['type'],
+            $new_data[$field_name] = new \Api\Database\DatabaseParam(
+                $fields[$field_name]['type'],
+                $field_value
             );
         }
         return $new_data;
