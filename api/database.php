@@ -20,7 +20,21 @@ class Database {
         }			
     }
 
-    public function select($query = "" , $params = []) {
+    public function select($table, $fields, $where) {
+        $params = array();
+
+        $query = "SELECT ".implode(",", $fields)." FROM $table";
+
+        $conditions = array();
+        foreach ($where as $field_name => $field_param) {
+            $conditions[] = $field_name."=?";
+            $params[] = $field_param;
+        }
+
+        if (count($conditions) > 0) {
+            $query .= " WHERE ".implode(" AND ", $conditions);
+        }
+
         try {
             $stmt = $this->executeStatement($query , $params);
             $result = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);				
@@ -29,6 +43,7 @@ class Database {
         } catch(\Exception $e) {
             throw New \Exception($e->getMessage());
         }
+
         return false;
     }
 
@@ -55,9 +70,23 @@ class Database {
         return false;
     }
 
-    public function delete($table, $where, $params) {
+    public function delete($table, $where) {
+        $params = array();
+
+        $query = "DELETE FROM $table";
+
+        $conditions = array();
+        foreach ($where as $field_name => $field_param) {
+            $conditions[] = $field_name."=?";
+            $params[] = $field_param;
+        }
+
+        if (count($conditions) > 0) {
+            $query .= " WHERE ".implode(" AND ", $conditions);
+        }
+
         try {
-            $stmt = $this->executeStatement("DELETE FROM $table WHERE ".implode(" AND ", $where), $params);
+            $stmt = $this->executeStatement($query, $params);
             $stmt->close();
 
             return true;
@@ -76,12 +105,23 @@ class Database {
             $field_types[] = $field_name . " = ?";
         }
 
+        $query = "UPDATE $table SET ".implode(",", $field_types);
+
+        $conditions = array();
+        foreach ($where as $field_name => $field_param) {
+            $conditions[] = $field_name."=?";
+            $params[] = $field_param;
+        }
+
+        if (count($conditions) > 0) {
+            $query .= " WHERE ".implode(" AND ", $conditions);
+        }
+
         try {
-            $stmt = $this->executeStatement("UPDATE $table SET ".implode(",", $field_types)." WHERE $where" , $params);
-            $insert_id = $stmt->insert_id;
+            $stmt = $this->executeStatement($query, $params);
             $stmt->close();
 
-            return array('id' => $insert_id);
+            return true;
         } catch(\Exception $e) {
             throw New \Exception($e->getMessage());
         }
