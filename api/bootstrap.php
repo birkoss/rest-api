@@ -3,9 +3,11 @@
 require_once(__DIR__ . "/database.php");
 require_once(__DIR__ . "/controller.php");
 require_once(__DIR__ . "/model.php");
+require_once(__DIR__ . "/route.php");
 
 class Api {
     protected $urls = array();
+    protected $user = '';
 
     public function load($app) {
         include_once("$app/models.php");
@@ -18,6 +20,10 @@ class Api {
             include_once("$app/urls.php");
             $this->urls = array_merge($this->urls, $urls);
         }
+    }
+
+    public function set_user($user) {
+        $this->user = $user;
     }
 
     public function run() {
@@ -35,6 +41,9 @@ class Api {
         if ($authorization != "" && preg_match("|^token (.*)$|Uim", $authorization, $matches)) {
             $token = $matches[1];
 
+            if ($this->user == "") {
+                // @TODO: Do something is the user is not set, or if the user is not valid
+            }
             $model = new \Users\Models\User();
             $users = $model->getUser($token);
             if (count($users) > 0) {
@@ -55,10 +64,10 @@ class Api {
 
         foreach ($this->urls as $single_url) {
         
-            if (preg_match('|^'.$single_url[0].'$|Uim', $request['url'], $arguments)) {
+            if (preg_match('|^'.$single_url->rule.'$|Uim', $request['url'], $arguments)) {
                 array_shift($arguments);
         
-                $controller = $single_url[1];
+                $controller = $single_url->controller;
                 break;
             }
         }
