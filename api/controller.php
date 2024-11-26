@@ -61,17 +61,4 @@ class BaseController {
 
         return trim($str, ", ");
     }
-
-    public function response($data, $httpHeaders=array()) {
-        header_remove('Set-Cookie');
-
-        if (is_array($httpHeaders) && count($httpHeaders) > 0) {
-            foreach ($httpHeaders as $httpHeader) {
-                header($httpHeader);
-            }
-        }
-
-        echo json_encode($data);
-        exit;
-    }
 }

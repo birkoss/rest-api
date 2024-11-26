@@ -3,11 +3,15 @@
 require_once(__DIR__ . "/database.php");
 require_once(__DIR__ . "/controller.php");
 require_once(__DIR__ . "/model.php");
+require_once(__DIR__ . "/response.php");
 require_once(__DIR__ . "/route.php");
+
+use \Api\Response\Response;
+use \Api\Response\Status;
 
 class Api {
     protected $urls = array();
-    protected $auth = null;
+    protected $auth = NULL;
 
     private function build_request() {
         $url_info = parse_url($_SERVER['REQUEST_URI']);
@@ -17,28 +21,26 @@ class Api {
             'url' => substr($url_info['path'], 1),
             'query' => array(),
             'method' => strtolower($_SERVER["REQUEST_METHOD"]),
-            'user' => null,
+            'user' => NULL,
         );
         
         $authorization = $_SERVER['HTTP_AUTHORIZATION'];
         if ($authorization != "" && preg_match("|^token (.*)$|Uim", $authorization, $matches)) {
             $token = $matches[1];
 
-            if ($this->auth == null || !method_exists($this->auth, 'authenticate')) {
-                $c = new \Api\Controller\BaseController;
-                $c->response(
-                    array('error' => 'Must have a valid Auth Model to use Token Authorization.'), 
-                    array('Content-Type: application/json', 'HTTP/1.1 422 Unprocessable Entity')
-                );
+            if (!$this->auth || !method_exists($this->auth, 'authenticate')) {
+                $this->send_response(new Response(
+                    array('error' => 'Must have a valid Auth Model to use Token Authorization.'),
+                    Status::HTTP_422_UNPROCESSABLE_ENTITY
+                ));
             }
             try {
                 $request['user'] = $this->auth->authenticate($token);
             } catch(Error $e) {
-                $c = new \Api\Controller\BaseController;
-                $c->response(
+                $this->send_response(new Response(
                     array('error' => 'Auth Model with an authenticate method Not Found'), 
-                    array('Content-Type: application/json', 'HTTP/1.1 422 Unprocessable Entity')
-                );
+                    Status::HTTP_422_UNPROCESSABLE_ENTITY
+                ));
             }
         }
 
@@ -89,35 +91,55 @@ class Api {
         try {
             $c = new $controller_name;    
         } catch (Error $e) {
-            $c = new \Api\Controller\BaseController;
-            $c->response(
+            $this->send_response(new Response(
                 array('error' => 'Controller Not Found'), 
-                array('Content-Type: application/json', 'HTTP/1.1 422 Unprocessable Entity')
-            );
+                Status::HTTP_422_UNPROCESSABLE_ENTITY
+            ));
         }
         
         // Validate authorization if neeeded
         if ($c->need_authorization() && !$request['user']) {
-            $c->response(
+            $this->send_response(new Response(
                 array('error' => 'Provide A Valid Token'), 
-                array('Content-Type: application/json', 'HTTP/1.1 401 Unauthorized')
-            );
+                Status::HTTP_401_UNAUTHORIZED
+            ));
         }
         
         // Must support the requested method
         if (!method_exists($c, $request['method'])) {
-            $c->response(
+            $this->send_response(new Response(
                 array('error' => 'Method Not Supported'), 
-                array('Content-Type: application/json', 'HTTP/1.1 422 Unprocessable Entity')
-            );
+                Status::HTTP_422_UNPROCESSABLE_ENTITY
+            ));
         }
         
         // Call the requested method.
         // - First argument is always the complete request
         // - Then all the $url_arguments are added
-        $c->{$request['method']}(
+        $response = $c->{$request['method']}(
             $request,
             ...array_values($url_arguments)
         );
+
+
+        $this->send_response($response);
     }
+
+     public function send_response($response) {
+        $http_headers = array(
+            'Content-Type: application/json',
+            'HTTP/1.1 ' . $response->status,
+        );
+
+        header_remove('Set-Cookie');
+
+        if (is_array($http_headers) && count($http_headers) > 0) {
+            foreach ($http_headers as $single_http_header) {
+                header($single_http_header);
+            }
+        }
+
+        echo json_encode($response->data);
+        exit;
+    }   
 }
