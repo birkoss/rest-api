@@ -62,7 +62,7 @@ class BaseController {
         return trim($str, ", ");
     }
 
-    public function sendOutput($data, $httpHeaders=array()) {
+    public function response($data, $httpHeaders=array()) {
         header_remove('Set-Cookie');
 
         if (is_array($httpHeaders) && count($httpHeaders) > 0) {

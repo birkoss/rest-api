@@ -36,7 +36,7 @@ class Database {
         }
 
         try {
-            $stmt = $this->executeStatement($query , $params);
+            $stmt = $this->execute($query , $params);
             $result = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);				
             $stmt->close();
             return $result;
@@ -59,7 +59,7 @@ class Database {
         }
 
         try {
-            $stmt = $this->executeStatement("INSERT INTO $table (".implode(",", $field_names).") VALUES (".implode(",", $types).")" , $params);
+            $stmt = $this->execute("INSERT INTO $table (".implode(",", $field_names).") VALUES (".implode(",", $types).")" , $params);
             $insert_id = $stmt->insert_id;
             $stmt->close();
 
@@ -86,7 +86,7 @@ class Database {
         }
 
         try {
-            $stmt = $this->executeStatement($query, $params);
+            $stmt = $this->execute($query, $params);
             $stmt->close();
 
             return true;
@@ -118,7 +118,7 @@ class Database {
         }
 
         try {
-            $stmt = $this->executeStatement($query, $params);
+            $stmt = $this->execute($query, $params);
             $stmt->close();
 
             return true;
@@ -128,7 +128,7 @@ class Database {
         return false;
     }
 
-    private function executeStatement($query = "" , $params = []) {
+    private function execute($query = "" , $params = []) {
         try {
             $stmt = $this->connection->prepare($query);
             if($stmt === false) {
